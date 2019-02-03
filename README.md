@@ -1,2 +1,2 @@
 # QHacks-relaxnation
-Welcome to the official GitHUb for relaxnation!
+Welcome to the official GitHub for relaxnation!
