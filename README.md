@@ -1,2 +1,2 @@
 # QHacks 2019 - relaxnation
-Welcome to the official GitHub for relaxnation!
+Queen's Hackathon final project with Jill Bennett, Sam Cantor, Andrew Simonds and Eliza Wallace
