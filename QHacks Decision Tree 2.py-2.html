@@ -1,0 +1,130 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[14]:
+
+
+#Classify songs as happy, sad, angry, or calm
+
+#Make 5 separate decision trees, trained with 5 separate data sets
+#Run predicitons through every decision tree, take most popular response
+#combination of decision trees improves accuracy
+
+from sklearn import tree
+import pandas as pd
+from spotify_api_client import search, search_all, get
+
+
+# In[15]:
+
+
+# Read the CSVs
+
+filenames = ['train_data0.csv', 'train_data1.csv', 'train_data2.csv', 'train_data3.csv', 'train_data4.csv']
+dataframes = []
+
+for f in filenames:
+    dataframes.append(pd.read_csv(f)) #now have cvs's as df's in a list
+
+#merge into one dataframe
+df_train = pd.concat(dataframes, axis = 0, ignore_index = True)
+
+df_test = pd.read_csv('test_data0.csv')
+
+csv_loc = '/Users/Jill/Documents/QMIND_Music_jpnb/'
+#export the data to the csv
+export_csv = df_train.to_csv (f'{csv_loc}master_data.csv', index = None, header=True)
+
+
+# In[16]:
+
+
+# Relevant columns for features and labels
+fields = ['speechiness', 'instrumentalness', 'key', 'time signature', 'acousticness',
+                    'danceability', 'energy', 'loudness', 'tempo']
+label_field = 'genre'
+
+# Reading features and labels from the dataframe
+train_features = df_train.loc[:, fields].values
+train_labels = df_train.loc[:, label_field].values
+
+test_features = df_test.loc[:, fields].values
+test_labels = df_test.loc[:, label_field].values
+
+#create & train the decision tree
+clf = tree.DecisionTreeClassifier() #importing the decision tree classifier
+clf = clf.fit(train_features, train_labels) #create learning algorithm
+
+
+# In[17]:
+
+
+#loop over every song, predict, compare to real value, keep track of accuracy
+score = 0
+for i, feature in enumerate(test_features):
+    result = clf.predict([feature])
+    
+    if (result == test_labels[i]):
+        score += 1
+        
+accuracy = (score/len(test_features))*100
+print(f'Accuracy of tree: {accuracy}')
+
+
+# In[30]:
+
+
+#use clf2 to accept a genre as input, check the new songs playlist 
+#on spotify for songs with matching genre, return song ID
+
+def get_track(genre, tree):
+    genre = str(genre)
+    pl = 'new music friday'
+    
+    playlist_id = search(pl, 'playlist') #returns id of first search result in a string
+    #print('playlist id:', playlist_id)
+    playlist_data = get(f'v1/playlists/{playlist_id}/tracks')
+    
+    for n in range(100):
+    
+        track_id = playlist_data['items'][n]['track']['id']
+        #print('track_id', track_id)
+        try:
+            track_data = get(f'v1/audio-features/{track_id}')
+    
+            key = track_data['key']
+            time_sig = track_data['time_signature']
+            acst = track_data['acousticness']
+            dance = track_data['danceability']
+            enrg = track_data['energy']
+            loud = track_data['loudness']
+            tempo = track_data['tempo']
+            speech = track_data['speechiness']
+            instrum = track_data['instrumentalness']
+        
+            track_features = [speech, instrum, key, time_sig, acst, dance, enrg, loud, tempo]
+            #print(track_features)
+        
+            result = tree.predict([track_features])
+            #print(result)
+            
+        except:
+            result = 'invalid'
+            #print(result)
+        
+        if result == genre:
+            return track_id
+            break
+
+
+# In[31]:
+
+
+print(get_track('happy', clf))
+
+
+# In[ ]:
+
+
+
+
